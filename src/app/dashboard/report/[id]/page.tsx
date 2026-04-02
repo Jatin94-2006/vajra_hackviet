@@ -128,6 +128,29 @@ export default function SecurityReport() {
           </div>
         </motion.div>
 
+        {/* README Badge Section (Hidden on Print) */}
+        <div className="glass-light p-6 rounded-2xl border border-indigo-100 print:hidden flex flex-col items-center gap-4 text-center">
+           <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm uppercase tracking-widest">
+             <Zap className="w-4 h-4" /> Final Step: Add the Badge
+           </div>
+           <p className="text-slate-600 text-sm">Share your security success! Copy the markdown below to your README.</p>
+           
+           <div className="flex items-center gap-2 bg-indigo-900 text-white px-3 py-1 rounded-full font-bold text-xs">
+              <Shield className="w-3.5 h-3.5 text-primary" />
+              VAJRA SECURED
+           </div>
+
+           <div 
+             onClick={() => {
+               navigator.clipboard.writeText(`[![Vajra Secured](https://img.shields.io/badge/Vajra--Secured-Security%20Verified-indigo)](https://vajra-security.vercel.app/)`);
+               alert("Markdown badge copied to clipboard!");
+             }}
+             className="w-full bg-white border border-slate-200 p-4 rounded-xl font-mono text-[10px] text-slate-500 cursor-pointer hover:bg-slate-50 transition-all text-center break-all"
+           >
+             [![Vajra Secured](https://img.shields.io/badge/Vajra--Secured-Security%20Verified-indigo)](https://github.com/Jatin94-2006/Vajra_byCyberRaiders)
+           </div>
+        </div>
+
         {/* Footer Info (Hidden on Print) */}
         <div className="text-center text-slate-400 text-xs flex flex-col gap-2 print:hidden">
             <p>This document is a generated security audit from the Vajra DevSecOps platform.</p>

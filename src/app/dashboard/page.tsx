@@ -302,6 +302,15 @@ export default function Dashboard() {
                  <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded border border-green-500/30">
                    ✅ {Object.keys(fixesMade).length} Solved
                  </span>
+                 
+                 {/* Audit Certificate Link */}
+                 <Link 
+                   href={`/dashboard/report/${JSON.parse(localStorage.getItem("vajra_analytics") || "[]").slice(-1)[0]?.id}`}
+                   className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] uppercase font-black px-2.5 py-1 rounded shadow-lg shadow-indigo-600/20 transition-all ml-1.5"
+                 >
+                   <FileText className="w-3 h-3" />
+                   Security Report
+                 </Link>
                </div>
             )}
           </div>
