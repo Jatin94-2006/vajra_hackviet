@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, ShieldAlert, Cpu, Check, FileCode, Zap, Download, Home, Trash2, XOctagon } from "lucide-react";
+import { Play, ShieldAlert, Cpu, Check, FileCode, Zap, Download, Home, Trash2, XOctagon, FileText } from "lucide-react";
 import Link from "next/link";
 
 type Vulnerability = {

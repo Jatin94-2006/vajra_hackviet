@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { 
   History, Clock, Shield, Search, ArrowRight, 
   Trash2, ExternalLink, Zap, CheckCircle, 
-  AlertTriangle, Filter, LayoutDashboard
+  AlertTriangle, Filter, LayoutDashboard, FileText
 } from "lucide-react";
 import Link from "next/link";
 
@@ -160,13 +160,23 @@ export default function HistoryPage() {
                     </div>
                   </div>
 
-                  <Link 
-                    href="/dashboard"
-                    className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-primary hover:text-slate-950 transition-all group/btn ml-auto md:ml-0"
-                    title="Open in Sandbox"
-                  >
-                    <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-                  </Link>
+                  <div className="flex gap-2 ml-auto md:ml-0">
+                    <Link 
+                      href={`/dashboard/report/${item.id}`}
+                      className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 text-indigo-400 transition-all flex items-center gap-2 group/report"
+                      title="Generate Audit Certificate"
+                    >
+                      <FileText className="w-5 h-5 group-hover/report:scale-110 transition-transform" />
+                      <span className="hidden lg:inline text-xs font-bold uppercase tracking-widest">Report</span>
+                    </Link>
+                    <Link 
+                      href="/dashboard"
+                      className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-primary hover:text-slate-950 transition-all group/btn"
+                      title="Open in Sandbox"
+                    >
+                      <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                    </Link>
+                  </div>
                 </div>
               </motion.div>
             );
