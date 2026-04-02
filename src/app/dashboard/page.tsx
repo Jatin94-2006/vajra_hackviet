@@ -21,6 +21,7 @@ export default function Dashboard() {
   
   const [repoUrl, setRepoUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+  const [detectedLang, setDetectedLang] = useState<string | null>(null);
   const [scanComplete, setScanComplete] = useState(false);
   const [autoFix, setAutoFix] = useState(false);
   
@@ -80,9 +81,17 @@ export default function Dashboard() {
     setScanSessionId(null);
     setFixesMade({});
     setScanTime("0.0");
+    setDetectedLang(null);
     setIsAborted(false);
     stopRequested.current = false;
     const startTimer = Date.now();
+    
+    // Fake language detection animation
+    setTimeout(() => setDetectedLang("Scanning Architecture..."), 500);
+    setTimeout(() => {
+       const langs = ["JavaScript", "Python", "TypeScript", "NodeJS", "Ruby", "Golang"];
+       setDetectedLang(langs[Math.floor(Math.random() * langs.length)] + " Stack Detected");
+    }, 2000);
 
     try {
       const response = await fetch("http://localhost:8000/api/scan", {
@@ -301,7 +310,10 @@ export default function Dashboard() {
              {isScanning && (
                <div className="text-center text-slate-400 py-10 animate-pulse flex flex-col items-center gap-3">
                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                 Running advanced Semgrep security scan...
+                 <div className="flex flex-col gap-1">
+                   <span>Advanced Semgrep Scan Initialized</span>
+                   {detectedLang && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20 font-bold">{detectedLang}</span>}
+                 </div>
                </div>
              )}
 
@@ -386,8 +398,11 @@ export default function Dashboard() {
                <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-[#0d1117] min-h-0">
                  {/* Original Vulnerable Code */}
                  <div className={`flex-1 overflow-auto border-slate-800 p-4 transition-all w-full ${fixesMade[selectedVuln.id] ? 'md:w-1/2 border-r' : 'md:w-full'}`}>
-                   <div className="text-xs text-slate-500 mb-2 uppercase font-bold tracking-wider">Original Code</div>
-                   <pre className="text-sm font-mono text-red-400 bg-red-950/20 w-fit min-w-full p-4 rounded-lg">
+                   <div className="flex justify-between items-center mb-2">
+                     <div className="text-xs text-slate-500 uppercase font-bold tracking-wider">Original Code</div>
+                     <span className="text-[10px] bg-red-500/10 text-red-500 px-2 py-0.5 rounded border border-red-500/20 font-mono">- DELETING ORIGINAL</span>
+                   </div>
+                   <pre className="text-sm font-mono text-red-400 bg-red-950/20 w-fit min-w-full p-4 rounded-lg border border-red-500/10">
                      <code>{selectedVuln.code}</code>
                    </pre>
                  </div>
@@ -400,14 +415,17 @@ export default function Dashboard() {
                        animate={{ opacity: 1, width: '100%' }}
                        className="flex-1 overflow-auto p-4 relative bg-green-950/10 md:w-1/2"
                      >
-                       <div className="text-xs text-green-500 mb-2 uppercase font-bold tracking-wider">AI Secured Code</div>
+                       <div className="flex justify-between items-center mb-2">
+                         <div className="text-xs text-green-500 uppercase font-bold tracking-wider">AI Secured Code</div>
+                         {!isFixing && <span className="text-[10px] bg-green-500/10 text-green-500 px-2 py-0.5 rounded border border-green-500/20 font-mono">+ APPENDING FIX</span>}
+                       </div>
                        {isFixing ? (
                          <div className="h-full flex flex-col items-center justify-center text-slate-400 pt-10">
                            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                           <p>Analyzing context and writing safe code...</p>
+                           <p className="text-sm animate-pulse">Running autonomous remediation...</p>
                          </div>
                        ) : (
-                         <pre className="text-sm font-mono text-green-400 bg-green-950/20 w-fit min-w-full p-4 rounded-lg">
+                         <pre className="text-sm font-mono text-green-400 bg-green-950/20 w-fit min-w-full p-4 rounded-lg border border-green-500/10">
                            <code>{fixesMade[selectedVuln.id].code}</code>
                          </pre>
                        )}

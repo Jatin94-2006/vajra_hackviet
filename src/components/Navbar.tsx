@@ -44,8 +44,9 @@ export default function Navbar() {
           <span className="text-xl font-bold tracking-tight text-white">VAJRA</span>
         </Link>
         <div className="hidden md:flex items-center gap-8">
-          <Link href="#features" className="text-sm text-slate-300 hover:text-white transition-colors">Features</Link>
-          <Link href="#workflow" className="text-sm text-slate-300 hover:text-white transition-colors">Workflow</Link>
+          <Link href="/dashboard" className="text-sm text-slate-300 hover:text-white transition-colors">Sandbox</Link>
+          <Link href="/dashboard/analytics" className="text-sm text-slate-300 hover:text-white transition-colors">Analytics</Link>
+          <Link href="/dashboard/history" className="text-sm text-slate-300 hover:text-white transition-colors">History</Link>
           
           {isLoggedIn ? (
             <div className="flex items-center gap-4 bg-slate-900 border border-slate-800 py-1.5 px-4 rounded-full">
