@@ -17,7 +17,7 @@ type Vulnerability = {
 
 export default function Dashboard() {
   const [userPlan, setUserPlan] = useState<'Free' | 'Premium'>('Free');
-  const [credits, setCredits] = useState(50);
+  const [credits, setCredits] = useState(500);
   
   const [repoUrl, setRepoUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
