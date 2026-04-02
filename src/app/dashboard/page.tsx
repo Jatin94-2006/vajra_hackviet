@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, ShieldAlert, Cpu, Check, FileCode, Zap, Download, Home } from "lucide-react";
+import { Play, ShieldAlert, Cpu, Check, FileCode, Zap, Download, Home, Trash2, XOctagon } from "lucide-react";
 import Link from "next/link";
 
 type Vulnerability = {
@@ -32,6 +32,10 @@ export default function Dashboard() {
   const [isFixing, setIsFixing] = useState(false);
   const [fixesMade, setFixesMade] = useState<Record<string, { code: string, exp: string }>>({});
   const [isAuth, setIsAuth] = useState(false);
+  
+  // Stop Signal
+  const stopRequested = useRef(false);
+  const [isAborted, setIsAborted] = useState(false);
 
   // Persistence Logic
   useEffect(() => {
@@ -76,6 +80,8 @@ export default function Dashboard() {
     setScanSessionId(null);
     setFixesMade({});
     setScanTime("0.0");
+    setIsAborted(false);
+    stopRequested.current = false;
     const startTimer = Date.now();
 
     try {
@@ -90,15 +96,37 @@ export default function Dashboard() {
         setVulnerabilities(data.results);
         setScanSessionId(data.session_id);
         
+        // Log to Analytics 
+        const newScanEntry = {
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+          detected: data.results.length,
+          fixed: 0,
+          repo: repoUrl
+        };
+        const currentHistory = JSON.parse(localStorage.getItem("vajra_analytics") || "[]");
+        localStorage.setItem("vajra_analytics", JSON.stringify([...currentHistory, newScanEntry]));
+
         // Auto-fix logic
         if (autoFix && data.results.length > 0) {
-           // Iterate sequentially through all findings instead of just the first one
-           alert(`Auto-Fix active! Sequentially resolving ${data.results.length} issues in the background. Watch the board!`);
+           alert(`Auto-Fix active! Sequentially resolving ${data.results.length} issues...`);
            for (let i = 0; i < data.results.length; i++) {
+               // Exit check
+               if (stopRequested.current) {
+                 setIsAborted(true);
+                 break;
+               }
+
                const target = data.results[i];
-               setSelectedVuln(target); // Highlight the targeted vulnerability visually
+               setSelectedVuln(target);
                await executeFix(target, data.session_id);
-               // 5-second delay to safely avoid Gemini Free Tier 429 Rate Limits
+               
+               // Exit check between fixes
+               if (stopRequested.current) {
+                 setIsAborted(true);
+                 break;
+               }
+
                await new Promise(resolve => setTimeout(resolve, 5000));
            }
         }
@@ -141,6 +169,12 @@ export default function Dashboard() {
           ...prev, 
           [vuln.id]: { code: data.fixed_code, exp: data.explanation || "Issue resolved securely." }
         }));
+
+        const currentHistory = JSON.parse(localStorage.getItem("vajra_analytics") || "[]");
+        if (currentHistory.length > 0) {
+          currentHistory[currentHistory.length - 1].fixed += 1;
+          localStorage.setItem("vajra_analytics", JSON.stringify(currentHistory));
+        }
       } else {
         alert("Fix failed: " + data.detail);
       }
@@ -191,34 +225,52 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <form onSubmit={handleScan} className="w-full md:w-auto flex flex-col gap-3">
-          <div className="flex gap-3">
-            <input 
-              type="text" 
-              placeholder="Enter URL or org/repo (e.g. appsecco/dvna)"
-              value={repoUrl}
-              onChange={(e) => setRepoUrl(e.target.value)}
-              className="flex-1 md:w-80 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg focus:outline-none focus:border-primary text-white"
-              required
-              disabled={isScanning}
-            />
-            <button 
-              type="submit" 
-              disabled={isScanning}
-              className="px-6 py-3 bg-primary text-slate-950 font-bold rounded-lg hover:bg-white transition-all disabled:opacity-50 flex items-center gap-2"
-            >
-              {isScanning ? (
-                 <span className="animate-pulse">Scanning...</span>
-              ) : (
-                 <>Scan <Play className="w-4 h-4" /></>
+        <div className="flex gap-4 items-center">
+          <Link href="/dashboard/analytics" className="px-6 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold hover:bg-slate-800 transition-all flex items-center gap-2">
+            <Zap className="w-4 h-4 text-primary" />
+            Intelligence Insights
+          </Link>
+          <form onSubmit={handleScan} className="w-full md:w-auto flex flex-col gap-3">
+            <div className="flex gap-3">
+              <input 
+                type="text" 
+                placeholder="Enter URL or org/repo (e.g. appsecco/dvna)"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                className="flex-1 md:w-80 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg focus:outline-none focus:border-primary text-white"
+                required
+                disabled={isScanning}
+              />
+              <button 
+                type="submit" 
+                disabled={isScanning}
+                className="px-6 py-3 bg-primary text-slate-950 font-bold rounded-lg hover:bg-white transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {isScanning ? (
+                   <span className="animate-pulse">Scanning...</span>
+                ) : (
+                   <>Scan <Play className="w-4 h-4" /></>
+                )}
+              </button>
+              
+              {isScanning && (
+                <button 
+                  type="button" 
+                  onClick={() => { stopRequested.current = true; }}
+                  className="px-4 py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/40 transition-all flex items-center gap-2"
+                  title="Terminate Process"
+                >
+                  <XOctagon className="w-5 h-5" />
+                  <span className="text-xs font-bold uppercase tracking-tighter">Kill</span>
+                </button>
               )}
-            </button>
-          </div>
-          <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer w-fit">
-            <input type="checkbox" checked={autoFix} onChange={e => setAutoFix(e.target.checked)} className="rounded border-slate-700 text-primary focus:ring-primary bg-slate-900" />
-            Enable Auto-Remediate
-          </label>
-        </form>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer w-fit">
+              <input type="checkbox" checked={autoFix} onChange={e => setAutoFix(e.target.checked)} className="rounded border-slate-700 text-primary focus:ring-primary bg-slate-900" />
+              Enable Auto-Remediate
+            </label>
+          </form>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -247,10 +299,21 @@ export default function Dashboard() {
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
              {isScanning && (
-               <div className="text-center text-slate-400 py-10 animate-pulse">Running advanced Semgrep security scan...</div>
+               <div className="text-center text-slate-400 py-10 animate-pulse flex flex-col items-center gap-3">
+                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                 Running advanced Semgrep security scan...
+               </div>
+             )}
+
+             {isAborted && (
+               <div className="text-center text-red-400 py-10 flex flex-col items-center gap-2 bg-red-500/5 rounded-xl border border-red-500/20">
+                 <XOctagon className="w-8 h-8" />
+                 <p className="font-bold">Process Terminated</p>
+                 <p className="text-xs text-red-500/70">Autonomous remediation was manually stopped.</p>
+               </div>
              )}
              
-             {scanComplete && vulnerabilities.length === 0 && !isScanning && (
+             {scanComplete && vulnerabilities.length === 0 && !isScanning && !isAborted && (
                <div className="text-center text-green-400 py-10 flex flex-col items-center gap-2">
                  <Check className="w-8 h-8" />
                  No vulnerabilities found!
