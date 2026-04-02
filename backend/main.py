@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from git import Repo
 import google.generativeai as genai
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,6 +19,10 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
+
+# Configure Groq
+groq_key = os.getenv("GROQ_API_KEY")
+groq_client = Groq(api_key=groq_key) if groq_key else None
 
 app = FastAPI(title="Vajra API", description="Autonomous DevSecOps AI Backend")
 
@@ -121,21 +126,37 @@ async def generate_fix(request: FixRequest):
     """
     
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=system_prompt)
-        
-        # Implement dynamic retry logic for Hackathon 429 Quota errors
-        max_retries = 3
-        retry_delay = 5 # seconds
-        for attempt in range(max_retries):
-            try:
-                response = model.generate_content(prompt)
-                break 
-            except Exception as e:
-                if "429" in str(e) and attempt < max_retries - 1:
-                    print(f"Quota hit (429). Retrying in {retry_delay}s... (Attempt {attempt+1})")
-                    time.sleep(retry_delay)
-                    continue
-                raise e
+        # Use Groq if client is available (Extremely fast & reliable for hackathons)
+        if groq_client:
+            print("Using Groq (Llama-3-70b) for remediation...")
+            completion = groq_client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1,
+                max_tokens=2048,
+                response_format={"type": "json_object"}
+            )
+            raw_output = completion.choices[0].message.content.strip()
+        elif api_key:
+            print("Using Gemini (1.5-flash) for remediation...")
+            model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
+            max_retries = 3
+            retry_delay = 5 
+            for attempt in range(max_retries):
+                try:
+                    response = model.generate_content(prompt)
+                    break 
+                except Exception as e:
+                    if "429" in str(e) and attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        continue
+                    raise e
+            raw_output = response.text.strip()
+        else:
+            raise HTTPException(status_code=500, detail="No AI provider (Gemini/Groq) configured in .env")
 
         raw_output = response.text.strip()
         if raw_output.startswith("```json"):
