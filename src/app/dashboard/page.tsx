@@ -33,7 +33,7 @@ export default function Dashboard() {
   const [isFixing, setIsFixing] = useState(false);
   const [fixesMade, setFixesMade] = useState<Record<string, { code: string, exp: string }>>({});
   const [isAuth, setIsAuth] = useState(false);
-  
+
   // Stop Signal
   const stopRequested = useRef(false);
   const [isAborted, setIsAborted] = useState(false);

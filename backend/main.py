@@ -106,8 +106,8 @@ async def scan_repository(request: ScanRequest):
 
 @app.post("/api/fix")
 async def generate_fix(request: FixRequest):
-    if not api_key:
-        raise HTTPException(status_code=500, detail="Gemini API Key is missing. Please set GEMINI_API_KEY in backend/.env")
+    if not api_key and not groq_client:
+        raise HTTPException(status_code=500, detail="No AI provider (Gemini/Groq) configured in .env")
 
     system_prompt = """
     You are Vajra, an autonomous AI security engineer. Your job is to fix security vulnerabilities in code.
