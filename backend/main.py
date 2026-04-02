@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import json
 import time
+import subprocess
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
