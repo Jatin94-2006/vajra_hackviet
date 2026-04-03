@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, ShieldAlert, Cpu, Check, FileCode, Zap, Download, Home, Trash2, XOctagon, FileText } from "lucide-react";
+import { Play, ShieldAlert, Cpu, Check, FileCode, Zap, Download, Home, Trash2, XOctagon, FileText, History as HistoryIcon } from "lucide-react";
 import Link from "next/link";
 
 type Vulnerability = {
@@ -94,7 +94,8 @@ export default function Dashboard() {
     }, 2000);
 
     try {
-      const response = await fetch("http://localhost:8000/api/scan", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/scan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ repo_url: repoUrl })
@@ -160,7 +161,8 @@ export default function Dashboard() {
     
     setIsFixing(true);
     try {
-      const response = await fetch("http://localhost:8000/api/fix", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/fix`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -208,8 +210,11 @@ export default function Dashboard() {
             <Zap className={`w-5 h-5 ${userPlan === 'Premium' ? 'text-primary' : 'text-yellow-400'}`} />
             {credits} Credits Available
           </div>
-          <div className="text-sm text-slate-400 border-l border-slate-700 pl-4">
+          <div className="text-sm text-slate-400 border-l border-slate-700 pl-4 flex items-center gap-2">
             Reset: 7 Days | {userPlan === 'Premium' ? '3 cr/scan' : '5 cr/scan'}
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold uppercase tracking-widest text-[9px]">
+              AI Engine: Active (Gemini 2.0 AI)
+            </span>
           </div>
         </div>
         {userPlan === 'Free' && (
@@ -235,9 +240,9 @@ export default function Dashboard() {
         </div>
         
         <div className="flex gap-4 items-center">
-          <Link href="/dashboard/analytics" className="px-6 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold hover:bg-slate-800 transition-all flex items-center gap-2">
-            <Zap className="w-4 h-4 text-primary" />
-            Intelligence Insights
+          <Link href="/dashboard/history" className="px-6 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold hover:bg-slate-800 transition-all flex items-center gap-2 group">
+            <HistoryIcon className="w-4 h-4 text-primary group-hover:rotate-12 transition-transform" />
+            Scan History
           </Link>
           <form onSubmit={handleScan} className="w-full md:w-auto flex flex-col gap-3">
             <div className="flex gap-3">
@@ -388,7 +393,7 @@ export default function Dashboard() {
                    
                    {Object.keys(fixesMade).length > 0 && scanSessionId && (
                      <a 
-                       href={`http://localhost:8000/api/download/${scanSessionId}`}
+                        href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/download/${scanSessionId}`}
                        target="_blank"
                        className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition flex items-center gap-2"
                      >

@@ -16,8 +16,8 @@ const features = [
   },
   {
     icon: Sparkles,
-    title: "Gemini / CodeQwen AI",
-    description: "State-of-the-art LLMs providing rich, context-aware code patches and security guidance.",
+    title: "Groq Llama 3.3 AI",
+    description: "State-of-the-art Llama 3.3 model on Groq providing lightning-fast, context-aware code patches.",
   },
   {
     icon: Layout,

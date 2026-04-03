@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
-  History, Clock, Shield, Search, ArrowRight, 
+  History as HistoryIcon, Clock, Shield, Search, ArrowRight, 
   Trash2, ExternalLink, Zap, CheckCircle, 
   AlertTriangle, Filter, LayoutDashboard, FileText
 } from "lucide-react";
@@ -51,7 +51,7 @@ export default function HistoryPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-4xl font-bold flex items-center gap-3">
-            <History className="w-10 h-10 text-primary" />
+            <HistoryIcon className="w-10 h-10 text-primary" />
             Scan <span className="text-primary/70">Registry</span>
           </h1>
           <p className="text-slate-400 mt-2">Comprehensive audit log of all autonomous security sessions.</p>
@@ -94,7 +94,7 @@ export default function HistoryPage() {
       <div className="grid grid-cols-1 gap-4">
         {filteredHistory.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-500 border-2 border-dashed border-slate-800 rounded-3xl">
-            <History className="w-16 h-16 mb-4 opacity-20" />
+            <HistoryIcon className="w-16 h-16 mb-4 opacity-20" />
             <p className="text-xl font-medium">No scan sessions recorded yet.</p>
             <Link href="/dashboard" className="mt-4 text-primary hover:underline">Start your first scan</Link>
           </div>

@@ -4,25 +4,24 @@ import tempfile
 import json
 import time
 import subprocess
+import google.generativeai as genai
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from git import Repo
-import google.generativeai as genai
-from groq import Groq
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Configure Gemini
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-
-# Configure Groq
-groq_key = os.getenv("GROQ_API_KEY")
-groq_client = Groq(api_key=groq_key) if groq_key else None
+gemini_key = os.getenv("GEMINI_API_KEY")
+if gemini_key:
+    genai.configure(api_key=gemini_key)
+    # Using gemini-2.0-flash as the primary engine
+    model = genai.GenerativeModel('gemini-2.0-flash')
+else:
+    model = None
 
 app = FastAPI(title="Vajra API", description="Autonomous DevSecOps AI Backend")
 
@@ -106,8 +105,8 @@ async def scan_repository(request: ScanRequest):
 
 @app.post("/api/fix")
 async def generate_fix(request: FixRequest):
-    if not api_key and not groq_client:
-        raise HTTPException(status_code=500, detail="No AI provider (Gemini/Groq) configured in .env")
+    if not model:
+        raise HTTPException(status_code=500, detail="Gemini AI Engine not configured in .env")
 
     system_prompt = """
     You are Vajra, an autonomous AI security engineer. Your job is to fix security vulnerabilities in code.
@@ -126,39 +125,31 @@ async def generate_fix(request: FixRequest):
     """
     
     try:
-        # Use Groq if client is available (Extremely fast & reliable for hackathons)
-        if groq_client:
-            print("Using Groq (Llama-3-70b) for remediation...")
-            completion = groq_client.chat.completions.create(
-                model="llama3-70b-8192",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.1,
-                max_tokens=2048,
-                response_format={"type": "json_object"}
-            )
-            raw_output = completion.choices[0].message.content.strip()
-        elif api_key:
-            print("Using Gemini (1.5-flash) for remediation...")
-            model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
-            max_retries = 3
-            retry_delay = 5 
-            for attempt in range(max_retries):
-                try:
-                    response = model.generate_content(prompt)
-                    break 
-                except Exception as e:
-                    if "429" in str(e) and attempt < max_retries - 1:
-                        time.sleep(retry_delay)
-                        continue
-                    raise e
-            raw_output = response.text.strip()
-        else:
-            raise HTTPException(status_code=500, detail="No AI provider (Gemini/Groq) configured in .env")
+        if not model:
+            raise HTTPException(status_code=500, detail="Gemini AI Engine not configured in .env")
 
+        print(f"Executing Vajra remediation via Gemini (gemini-2.0-flash)...")
+        
+        # Use simple structured prompt for consistent JSON output
+        full_prompt = f"""
+        {system_prompt}
+        
+        {prompt}
+        """
+        
+        response = model.generate_content(
+            full_prompt,
+            generation_config=genai.GenerationConfig(
+                response_mime_type="application/json"
+            )
+        )
+        
         raw_output = response.text.strip()
+        print(f"Remediation Success!")
+
+        if not raw_output:
+            raise HTTPException(status_code=500, detail="All Groq models in the Vajra Chain failed. Check your API key or Rate Limits.")
+
         if raw_output.startswith("```json"):
             raw_output = raw_output[7:-3].strip()
         elif raw_output.startswith("```"):
@@ -189,7 +180,7 @@ async def generate_fix(request: FixRequest):
         
     except Exception as e:
         print("Gemini API Error:", e)
-        raise HTTPException(status_code=500, detail="Failed to generate AI fix. Error: " + str(e))
+        raise HTTPException(status_code=500, detail="Failed to generate AI fix via Gemini. Error: " + str(e))
 
 @app.get("/api/download/{session_id}")
 async def download_patched_repo(session_id: str):
